@@ -1,0 +1,35 @@
+name: PII Filter
+shortDescription: Detect and redact sensitive PII in MCP messages and JSON payloads
+description: |
+  A Model Context Protocol (MCP) server for screening content for sensitive personally identifiable information (PII) using Microsoft Presidio.
+
+  ## Features
+  - **PII Detection**: Identifies sensitive entities in MCP messages and JSON-compatible payloads
+  - **Automatic Redaction**: Returns redacted content when sensitive PII is found
+  - **Nanobot Hook Compatibility**: Accepts Nanobot-style hook payloads and can return rewritten message objects
+  - **Entity Reporting**: Includes all detected entities and the high-confidence sensitive subset in results
+  - **Confidence Tuning**: Supports an adjustable confidence threshold for filtering
+
+  ## What you'll need to connect
+
+  No credentials are required.
+
+  The server runs as a streamable HTTP MCP endpoint at `/mcp`.
+
+metadata:
+  categories: Security
+repoURL: https://github.com/obot-platform/pii-filter
+runtime: containerized
+containerizedConfig:
+  image: ghcr.io/obot-platform/pii-filter:v0.3.0
+  port: 8080
+  path: "/mcp"
+systemMCPServerType: filter
+filterConfig:
+  toolName: filter_pii
+toolPreview:
+  - name: filter_pii
+    description: Detect sensitive PII in a MCP messages and return a redacted message when needed.
+    params:
+      message: MCP message to inspect and redact
+      confidence_threshold: Optional float, default 0.8

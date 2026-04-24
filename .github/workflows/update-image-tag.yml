@@ -1,0 +1,211 @@
+name: Update Container Image Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: "Container image name (without tag)"
+        required: true
+        type: string
+      new_tag:
+        description: "New image tag to update to"
+        required: true
+        type: string
+  repository_dispatch:
+    types: [update-image-tag]
+
+jobs:
+  update-image-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: |
+          pip install ruamel.yaml
+          pip install -r scripts/validation/requirements.txt
+
+      - name: Setup Go for mcptools
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Install mcptools
+        run: |
+          go install github.com/f/mcptools/cmd/mcptools@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Validate version changes
+        id: validate-version
+        if: ${{ github.event.client_payload.type && github.event.client_payload.package && github.event.client_payload.name }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "Running MCP tools validation..."
+
+          # Get package info from client payload
+          PACKAGE_TYPE="${{ github.event.client_payload.type }}"
+          PACKAGE_NAME="${{ github.event.client_payload.package }}"
+          NEW_VERSION="${{ github.event.inputs.new_tag || github.event.client_payload.new_tag }}"
+          CATALOG_NAME="${{ github.event.client_payload.name }}"
+
+          # Get old version from local catalog YAML
+          CATALOG_FILE="${CATALOG_NAME}.yaml"
+          OLD_VERSION=""
+
+          if [ -f "$CATALOG_FILE" ]; then
+            # Extract current image tag from catalog YAML
+            OLD_VERSION=$(yq eval '.containerizedConfig.image' "$CATALOG_FILE" 2>/dev/null | grep -o ':[^:]*$' | sed 's/://' || echo "")
+          fi
+
+          if [ -z "$OLD_VERSION" ]; then
+            echo "⚠️  Could not determine old version from $CATALOG_FILE"
+            echo "Skipping validation (new package or missing catalog file)"
+            echo "validation_skipped=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Package: $PACKAGE_NAME"
+          echo "Old version: $OLD_VERSION"
+          echo "New version: $NEW_VERSION"
+
+          # Skip validation if versions are the same
+          if [ "$OLD_VERSION" = "$NEW_VERSION" ]; then
+            echo "⚠️  Old and new versions are the same, skipping validation"
+            echo "validation_skipped=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Run validation script
+          bash scripts/validation/compare-mcp-tools.sh \
+            "$PACKAGE_TYPE" \
+            "$PACKAGE_NAME" \
+            "$OLD_VERSION" \
+            "$NEW_VERSION" \
+            "$CATALOG_NAME" || echo "validation_skipped=true" >> $GITHUB_OUTPUT
+
+      - name: Update image tag in YAML files
+        id: update-files
+        run: |
+          python3 << 'EOF'
+          from ruamel.yaml import YAML
+          import os
+          import re
+          from pathlib import Path
+
+          # Handle inputs from both workflow_dispatch and repository_dispatch
+          image_name = "${{ github.event.inputs.image_name || github.event.client_payload.image_name }}"
+          new_tag = "${{ github.event.inputs.new_tag || github.event.client_payload.new_tag }}"
+
+          print(f"Looking for image: {image_name}")
+          print(f"New tag: {new_tag}")
+
+          updated_files = []
+
+          # Find all YAML files in the repository
+          yaml_files = list(Path('.').glob('*.yaml')) + list(Path('.').glob('*.yml'))
+
+          for yaml_file in yaml_files:
+              try:
+                  yaml = YAML()
+                  yaml.preserve_quotes = True
+                  yaml.width = 4096
+
+                  with open(yaml_file, 'r') as f:
+                      data = yaml.load(f)
+
+                  # Check if this file has containerizedConfig.image
+                  if (isinstance(data, dict) and
+                      'containerizedConfig' in data and
+                      isinstance(data['containerizedConfig'], dict) and
+                      'image' in data['containerizedConfig']):
+
+                      current_image = data['containerizedConfig']['image']
+                      print(f"Found image in {yaml_file}: {current_image}")
+
+                      # Check if the image name matches (with or without registry prefix)
+                      if image_name in current_image:
+                          # Extract the current image name without tag
+                          if ':' in current_image:
+                              image_base = current_image.rsplit(':', 1)[0]
+                          else:
+                              image_base = current_image
+
+                          # Create new image with new tag
+                          new_image = f"{image_base}:{new_tag}"
+
+                          print(f"Updating {yaml_file}: {current_image} -> {new_image}")
+
+                          # Update the image in the YAML data
+                          data['containerizedConfig']['image'] = new_image
+
+                          # Write back to file, preserving formatting as much as possible
+                          with open(yaml_file, 'w') as f:
+                              yaml.dump(data, f)
+
+                          updated_files.append(str(yaml_file))
+
+              except Exception as e:
+                  print(f"Error processing {yaml_file}: {e}")
+                  continue
+
+          if updated_files:
+              print(f"Updated files: {', '.join(updated_files)}")
+              print(f"::set-output name=updated_files::{','.join(updated_files)}")
+              print(f"::set-output name=files_updated::true")
+          else:
+              print("No matching files found to update")
+              print(f"::set-output name=files_updated::false")
+          EOF
+
+      - name: Create Pull Request
+        if: steps.update-files.outputs.files_updated == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update ${{ github.event.inputs.image_name || github.event.client_payload.image_name }} to tag ${{ github.event.inputs.new_tag || github.event.client_payload.new_tag }}"
+          title: "Update ${{ github.event.inputs.image_name || github.event.client_payload.image_name }} to tag ${{ github.event.inputs.new_tag || github.event.client_payload.new_tag }}"
+          reviewers: tybalex
+          body: |
+            This PR updates the container image tag for `${{ github.event.inputs.image_name || github.event.client_payload.image_name }}` to `${{ github.event.inputs.new_tag || github.event.client_payload.new_tag }}`.
+
+            **Updated files:**
+            ${{ steps.update-files.outputs.updated_files }}
+
+            **Changes:**
+            - Updated `containerizedConfig.image` field with new tag
+
+            ${{ steps.validate-version.outputs.validation_result && format('
+
+            ---
+
+            {0}', steps.validate-version.outputs.validation_result) || '' }}
+
+            ---
+            Auto-generated by the update-image-tag workflow.
+          branch: update-image-${{ github.event.inputs.image_name || github.event.client_payload.image_name }}-${{ github.event.inputs.new_tag || github.event.client_payload.new_tag }}
+          delete-branch: true
+
+      - name: Output results
+        run: |
+          if [ "${{ steps.update-files.outputs.files_updated }}" == "true" ]; then
+            echo "✅ Successfully updated image tag in the following files:"
+            echo "${{ steps.update-files.outputs.updated_files }}" | tr ',' '\n'
+          else
+            echo "❌ No files were updated. Please check:"
+            echo "1. The image name '${{ github.event.inputs.image_name || github.event.client_payload.image_name }}' exists in any YAML file"
+            echo "2. The YAML file has a containerizedConfig.image field"
+            exit 1
+          fi
