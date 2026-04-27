@@ -21,19 +21,21 @@ metadata:
 repoURL: https://github.com/obot-platform/pii-filter
 runtime: containerized
 containerizedConfig:
-  image: ghcr.io/obot-platform/pii-filter:v0.4.0
+  image: ghcr.io/obot-platform/pii-filter:v0.5.0
   port: 8080
   path: "/mcp"
 systemMCPServerType: filter
 filterConfig:
   toolName: filter_pii
 env:
-  - key: PII_FILTER_TYPES
-    name: PII Filter Types
-    description: "Comma-separated list of PII entity types to detect. If not set, all supported types will be detected. See https://microsoft.github.io/presidio/supported_entities/ for all supported types. Default is: EMAIL_ADDRESS,PHONE_NUMBER,CREDIT_CARD,CRYPTO,IBAN_CODE,IP_ADDRESS,US_SSN,US_BANK_NUMBER,US_PASSPORT,MEDICAL_LICENSE,US_DRIVER_LICENSE"
+  - key: PII_BLOCK_TYPES
+    name: PII Filter Types to Block
+    description: Comma-separated list of PII entity types, and optionally threshold values, which will cause the message to be blocked. Threshold defaults to 0.8 if not provided. E.g. `EMAIL_ADDRESS,PHONE_NUMBER=0.6` would block messages container email addresses with confidence of 0.8 or higher, and phone numbers with a confidence of 0.6 or higher.
+  - key: PII_MUTATE_TYPES
+    name: PII Filter Types to Redact
+    description: Comma-separated list of PII entity types, and optionally threshold values, which will be redacted. Threshold defaults to 0.8 if not provided. E.g. `EMAIL_ADDRESS,PHONE_NUMBER=0.6` would redact email addresses with confidence of 0.8 or higher, and phone numbers with a confidence of 0.6 or higher.
 toolPreview:
   - name: filter_pii
     description: Detect sensitive PII in a MCP messages and return a redacted message when needed.
     params:
       message: MCP message to inspect and redact
-      confidence_threshold: Optional float, default 0.8
