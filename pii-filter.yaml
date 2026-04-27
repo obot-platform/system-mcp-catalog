@@ -21,12 +21,16 @@ metadata:
 repoURL: https://github.com/obot-platform/pii-filter
 runtime: containerized
 containerizedConfig:
-  image: ghcr.io/obot-platform/pii-filter:v0.3.1
+  image: ghcr.io/obot-platform/pii-filter:v0.4.0
   port: 8080
   path: "/mcp"
 systemMCPServerType: filter
 filterConfig:
   toolName: filter_pii
+env:
+  - key: PII_FILTER_TYPES
+    name: PII Filter Types
+    description: "Comma-separated list of PII entity types to detect. If not set, all supported types will be detected. See https://microsoft.github.io/presidio/supported_entities/ for all supported types. Default is: EMAIL_ADDRESS,PHONE_NUMBER,CREDIT_CARD,CRYPTO,IBAN_CODE,IP_ADDRESS,US_SSN,US_BANK_NUMBER,US_PASSPORT,MEDICAL_LICENSE,US_DRIVER_LICENSE"
 toolPreview:
   - name: filter_pii
     description: Detect sensitive PII in a MCP messages and return a redacted message when needed.
