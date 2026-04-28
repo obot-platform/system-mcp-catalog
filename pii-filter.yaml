@@ -31,7 +31,7 @@ env:
   - key: PII_BLOCK_TYPES
     name: PII Filter Types to Block
     description: Comma-separated list of PII entity types, and optionally threshold values, which will cause the message to be blocked. Threshold defaults to 0.8 if not provided. E.g. `EMAIL_ADDRESS,PHONE_NUMBER=0.6` would block messages container email addresses with confidence of 0.8 or higher, and phone numbers with a confidence of 0.6 or higher.
-  - key: PII_MUTATE_TYPES
+  - key: PII_REDACT_TYPES
     name: PII Filter Types to Redact
     description: Comma-separated list of PII entity types, and optionally threshold values, which will be redacted. Threshold defaults to 0.8 if not provided. E.g. `EMAIL_ADDRESS,PHONE_NUMBER=0.6` would redact email addresses with confidence of 0.8 or higher, and phone numbers with a confidence of 0.6 or higher.
 toolPreview:
