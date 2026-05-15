@@ -135,7 +135,7 @@ jobs:
 
       - name: Run mcpwn scan
         run: |
-          python3 mcpwn.py --output-sarif mcpwn-results.sarif --safe-mode http://localhost:8080
+          python3 mcpwn.py --output-sarif mcpwn-results.sarif --safe-mode http://localhost:8080/mcp
 
       - name: Checkout mcp-catalog
         uses: actions/checkout@v6
