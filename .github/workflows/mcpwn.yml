@@ -135,7 +135,11 @@ jobs:
 
       - name: Run mcpwn scan
         run: |
-          python3 mcpwn.py --output-sarif mcpwn-results.sarif --safe-mode http://localhost:8080/mcp
+          MCP_PATH='${{ matrix.server.containerizedConfig.path }}'
+          if [ -z "$MCP_PATH" ]; then
+            MCP_PATH="/"
+          fi
+          python3 mcpwn.py --output-sarif mcpwn-results.sarif --safe-mode "http://localhost:8080${MCP_PATH}"
 
       - name: Checkout mcp-catalog
         uses: actions/checkout@v6
