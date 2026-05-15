@@ -39,3 +39,6 @@ toolPreview:
     description: Detect sensitive PII in a MCP messages and return a redacted message when needed.
     params:
       message: MCP message to inspect and redact
+resources:
+  requests:
+    memory: 1Gi
