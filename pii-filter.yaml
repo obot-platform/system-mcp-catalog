@@ -1,4 +1,5 @@
 name: PII Filter
+serverUserType: singleUser
 shortDescription: Detect and redact sensitive PII in MCP messages and JSON payloads
 description: |
   A Model Context Protocol (MCP) server for screening content for sensitive personally identifiable information (PII) using Microsoft Presidio.
