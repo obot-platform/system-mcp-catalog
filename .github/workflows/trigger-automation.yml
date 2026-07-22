@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.extract-config.outputs.file_configs }}
+      has_targets: ${{ steps.extract-config.outputs.has_targets }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -36,6 +37,7 @@ jobs:
 
           if [ "$changed_files" == "[]" ] || [ -z "$changed_files" ]; then
             echo "file_configs=[]" >> $GITHUB_OUTPUT
+            echo "has_targets=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -66,8 +68,40 @@ jobs:
           # Output must be on single line for GitHub Actions
           echo "file_configs=$(echo "$file_configs" | jq -c .)" >> $GITHUB_OUTPUT
 
+          if [ "$(echo "$file_configs" | jq 'length')" -gt 0 ]; then
+            echo "has_targets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_targets=false" >> $GITHUB_OUTPUT
+          fi
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp-server-validation-automation/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mcp-server-validation-automation
+        run: npm ci
+
+      - name: Type-check automation
+        working-directory: mcp-server-validation-automation
+        run: npx tsc --noEmit
+
+      - name: Audit dependencies
+        working-directory: mcp-server-validation-automation
+        run: npm audit
+
   run-validation:
     needs: generate-matrix
+    if: needs.generate-matrix.outputs.has_targets == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -92,7 +126,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('mcp-server-validation-automation/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 

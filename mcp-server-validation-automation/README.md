@@ -1,6 +1,6 @@
 
 # WebdriverIO Automation Project
-This project uses **WebdriverIO** and **JavaScript** to automate the testing of **Obot.ai**, an AI-driven chatbot platform. The automation suite includes tests for logging into the platform, creating and editing AI agents, managing tasks, and using tools like file uploads, task management, and message handling.
+This project uses **WebdriverIO**, **Cucumber**, and **TypeScript** to validate MCP servers in Obot.
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
@@ -11,14 +11,14 @@ This project uses **WebdriverIO** and **JavaScript** to automate the testing of 
 ## Prerequisites
 Before running the tests, make sure you have the following installed:
 
-- [Node.js](https://nodejs.org/en/) (Version 14.x or higher)
+- [Node.js](https://nodejs.org/en/) 22 or higher
 - [npm](https://www.npmjs.com/) (Node package manager)
 - Web browser (e.g., Chrome, etc.)
-- **ChromeDriver** for WebDriver support in respective browsers.
+- A running Obot instance and any secrets required by the MCP server under test
 
 ## Quick Start
 
-1. Run `npm install` to install the necessary dependencies.
+1. Run `npm ci` to install the locked dependencies.
 2. Run all tests with `npm run wdio:all`.
 
 ## Running the tests
@@ -49,6 +49,8 @@ Once you've installed the dependencies and set up your environment, you can run 
 
 ## Usage
 This test suite is designed to work with WebDriverIO and Cucumber for behavior-driven testing. The tests validate user interactions with the Obot.ai platform, such as logging in, creating AI agents, managing tasks, and using different tools integrated into the platform.
+
+Catalog pull requests are validated by `.github/workflows/trigger-automation.yml`. The workflow starts Obot, creates entries for changed containerized catalog definitions, and runs the matching validation scenario. `.github/workflows/ui_test.yml` provides manually triggered smoke, regression, and full suites.
 
 ## Contributing
 
