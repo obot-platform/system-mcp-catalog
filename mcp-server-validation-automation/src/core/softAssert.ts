@@ -9,14 +9,17 @@ class SoftAssert {
   async equal(actual: any, expected: any, message: string) {
     try {
       assert.deepStrictEqual(actual, expected, message);
-      await allure.addStep(`Verify if Actual value:[${actual}] is equal to Expected value:[${expected}]`, undefined, Status.PASSED);
+      allure.addStep(`Verify if Actual value:[${actual}] is equal to Expected value:[${expected}]`, Status.PASSED);
     } catch (error) {
       const screenshot = await browser.takeScreenshot();
       const pageSource = await browser.getPageSource();
-      await allure.startStep(`Verify if Actual value:[${actual}] is equal to Expected value:[${expected}]`);
-      await allure.addAttachment('Screenshot', screenshot, 'image/png');
-      await allure.addAttachment('Page Source', pageSource, 'text/html');
-      await allure.endStep(Status.FAILED);
+      allure.addStep(`Verify if Actual value:[${actual}] is equal to Expected value:[${expected}]`,
+        {
+          attachments: [
+            { name: 'Screenshot', content: screenshot, type: 'image/png' },
+            { name: 'Page Source', content: pageSource, type: 'text/html' }
+          ]
+        }, Status.FAILED);
       this.assertionErrorMessages.push(`${message} expected:[${error.expected}] actual:[${error.actual}]`);
     }
   }

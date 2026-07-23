@@ -3,7 +3,6 @@
 
 import { SHORT_PAUSE, ELEMENT_TIMEOUT, SHORT_TIMEOUT } from './timeouts';
 import { IFormActionElements } from './types';
-import type { ChainablePromiseElement } from 'webdriverio';
 // import cheerio from 'cheerio';
 
 export async function element(locatorString: string) {
@@ -83,7 +82,7 @@ export async function slowInputFilling(locatorString: string, value: any) {
 }
 
 export async function formFill(formElements: IFormActionElements[]) {
-  const setValue = async (element: ChainablePromiseElement, action: string, value: any) => {
+  const setValue = async (element: WebdriverIO.Element, action: string, value: any) => {
     await element.waitForEnabled();
     switch (action) {
       case 'click':
@@ -183,7 +182,7 @@ export async function isElementDisplayed(locatorString: string, timeout = SHORT_
   }
 }
 
-export async function clearTextUsingBackspace(element: ChainablePromiseElement) {
+export async function clearTextUsingBackspace(element: WebdriverIO.Element) {
   let text = await element.getText();
   if (text.length === 0) {
     text = await element.getValue();

@@ -64,7 +64,7 @@ export async function sendPromptValidateAndCollect(promptText: string, toolList:
   
   // Count tools visible before sending the prompt
   const toolsBeforeElements = await $$('//div[@class="flex flex-col"]/div[@class="mb-1 flex items-center space-x-2"]/span[1]');
-  const toolsBeforeCount = await toolsBeforeElements.length;
+  const toolsBeforeCount = toolsBeforeElements.length;
 
   // Send and wait for reply
   const reply = await sendPromptAndWaitForReply(promptText);
@@ -82,11 +82,12 @@ export async function sendPromptValidateAndCollect(promptText: string, toolList:
 
   // Count tools visible after the prompt response
   const toolsAfterElements = await $$('//div[@class="flex flex-col"]/div[@class="mb-1 flex items-center space-x-2"]/span[1]');
-  const toolsAfterCount = await toolsAfterElements.length;
+  const toolsAfterCount = toolsAfterElements.length;
 
+  // Calculate new tools added (slice by index difference)
+  const newToolsElements = toolsAfterElements.slice(toolsBeforeCount, toolsAfterCount);
   const toolsTexts: string[] = [];
-  for (let i = toolsBeforeCount; i < toolsAfterCount; i++) {
-    const el = toolsAfterElements[i];
+  for (const el of newToolsElements) {
     const rawText = await el.getText();
     const match = rawText.match(/->\s*(.*)$/);
     toolsTexts.push(match ? match[1].trim() : rawText.trim());
