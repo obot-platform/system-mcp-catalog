@@ -7,7 +7,6 @@ This repository contains catalog entries for system MCP servers.
 - Root-level `*.yaml` files define catalog entries.
 - `.github/workflows/` contains the same automation used in the existing catalog repository.
 - `scripts/` contains helpers for tool preview refresh, validation, and linting.
-- `mcp-server-validation-automation/` contains the UI automation suite used by the workflows.
 
 ## Current Catalog Entries
 
@@ -26,8 +25,6 @@ The repository includes the same workflow and support structure as the existing 
 
 - image tag update automation
 - tool preview refresh
-- validation automation
 - vulnerability and MCPWN scanning workflows
-- UI test automation support
 
 Some workflows require GitHub Actions secrets such as `OPENAI_API_KEY` and access to GitHub Container Registry.
