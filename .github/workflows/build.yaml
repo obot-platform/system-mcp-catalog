@@ -1,0 +1,29 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Checkout Obot validator
+        uses: actions/checkout@v6
+        with:
+          repository: obot-platform/obot
+          ref: main
+          path: .obot
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+
+      - name: Validate catalog YAML
+        run: go -C .obot run . mcp validate-system-catalog-yaml "$GITHUB_WORKSPACE"/*.yaml
