@@ -20,7 +20,7 @@ metadata:
 repoURL: https://github.com/obot-platform/pii-filter
 runtime: containerized
 containerizedConfig:
-  image: ghcr.io/obot-platform/pii-filter:v0.5.4
+  image: ghcr.io/obot-platform/pii-filter:v0.5.5
   port: 8080
   path: "/mcp"
 systemMCPServerType: filter
