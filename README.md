@@ -10,6 +10,7 @@ This repository contains catalog entries for system MCP servers.
 
 ## Current Catalog Entries
 
+- `credential-filter.yaml`: Catalog entry for `ghcr.io/obot-platform/credential-filter:v0.1.0`
 - `pii-filter.yaml`: Catalog entry for `ghcr.io/obot-platform/pii-filter:v0.1.0`
 
 ## Repository Conventions
